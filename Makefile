@@ -4,14 +4,14 @@
 # ----- Update the settings of your project here -----
 
 # Hardware
-MCU     = atmega328p # see `make show-mcu`
-F_CPU   = 8000000UL
-PROJECT = Wecker-2
+MCU     = attiny4313 # see `make show-mcu`
+F_CPU   = 1000000UL
+PROJECT = tram_lsa
 
 #Progammer
-PROGRAMMER = arduino
+PROGRAMMER = stk500v2
 PORT = -P/dev/ttyUSB0
-BAUD = -b57600
+BAUD = -b115200
 
 # ----- These configurations are quite likely not to be changed -----
 
@@ -32,15 +32,18 @@ EXT_ASM = asm
 OUTPUT_DIR	:= ./build
 OBJDIR		:= ./build/obj
 SRCDIR		:= ./src
+COMMONDIR	:= ../common
 
 SOURCES	:= $(wildcard $(SRCDIR)/*.$(EXT_C) $(SRCDIR)/*.$(EXT_CPP) $(SRCDIR)/*.$(EXT_CXX))
+SOURCES	+= $(COMMONDIR)/OneButton2.cpp
+SOURCES	+= $(COMMONDIR)/timer0.cpp
 
 # ----- No changes should be necessary below this line -----
 
 # Object files
-TMP1			:= $(patsubst $(SRCDIR)/%.$(EXT_C), $(OBJDIR)/%.o, $(SOURCES))
-TMP2			:= $(patsubst $(SRCDIR)/%.$(EXT_CPP), $(OBJDIR)/%.o, $(TMP1))
-OBJECTS			:= $(patsubst $(SRCDIR)/%.$(EXT_CXX), $(OBJDIR)/%.o, $(TMP2))
+TMP1			:= $(patsubst %.$(EXT_C), $(OBJDIR)/%.o, $(SOURCES))
+TMP2			:= $(patsubst %.$(EXT_CPP), $(OBJDIR)/%.o, $(TMP1))
+OBJECTS			:= $(patsubst %.$(EXT_CXX), $(OBJDIR)/%.o, $(TMP2))
 
 # TODO explain these flags, make them configurable
 CFLAGS = $(INC)
@@ -85,17 +88,17 @@ print-%:
 $(TARGET).elf: $(OBJECTS)
 	@$(GCC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.$(EXT_C)
+$(OBJDIR)/%.o: /%.$(EXT_C)
 	@printf "  CC      $<\n"
 	@mkdir -p $(dir $@)
 	@$(GCC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.$(EXT_CPP)
+$(OBJDIR)/%.o: %.$(EXT_CPP)
 	@printf "  CXX     $<\n"
 	@mkdir -p $(dir $@)
 	@$(G++) $(C++FLAGS) -c $< -o $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.$(EXT_CXX)
+$(OBJDIR)/%.o: %.$(EXT_CXX)
 	@printf "  CXX     $<\n"
 	@mkdir -p $(dir $@)
 	@$(G++) $(C++FLAGS) -c $< -o $@
@@ -117,6 +120,7 @@ help:
 	@echo "  config    Shows the current configuration"
 	@echo "  help      Shows this help"
 	@echo "  show-mcu  Show list of all possible MCUs"
+	@echo "  size      Show the size of compiled files"
 
 config:
 	@echo "configuration:"
@@ -137,7 +141,7 @@ config:
 	@echo "  ASM-files: *.$(EXT_ASM)"
 
 show-mcu:
-	$(G++) --help=target
+	$(G++) --target-help
 
 size:
 	avr-size --mcu=$(MCU) -C $(TARGET).elf
