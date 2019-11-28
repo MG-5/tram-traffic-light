@@ -1,73 +1,164 @@
 
-#include "OneButton2.h"
+#include "../../common/OneButton2.h"
+#include "../../common/bit_manipulation.h"
+#include "../../common/timer0.h"
 
-#include "bit_manipulation.h"
-#include <avr/power.h>
+#include <avr/io.h>
 
-#define SIGNAL_KOMMT_PIN
-#define F0_PIN
-#define F4_PIN
-#define F1_PIN PINB4
+#define SIGN_PIN PINB3
+#define F0_PIN PINB2
+#define F4_PIN PINB1
+#define F1_PIN PINB0
 
-OneButton request(&PINC, 0); // C0
+#define F4_PERIOD 6000 // in ms
+
+enum class LightState
+{
+    F0,
+    F4,
+    F1,
+    F0_SIGN,
+    F4_SIGN,
+    F1_SIGN
+};
+
+OneButton requestButton(&PIND, 2);
+LightState currentLightState;
+
+uint32_t prevTime = 0;
+uint32_t prevTimeStage = 0;
+uint16_t randomNumber;
+
+void request_click();
 
 int main(void)
 {
-    /*
     // Eingänge
-    DDRD &= ~(1 << IR_PIN);
+    DDRD &= ~(1 << PIND2);
 
     // PullUp-Widerstand
-    PORTD |= (1 << IR_PIN); // IR receiver
+    PORTD |= (1 << PIND2);
 
     // Ausgänge
-    DDRB |= 0b00011110; // B1:4
-
-    // Interrupts
-    EICRA |= (1 << ISC00);
-    EIMSK |= (1 << INT0);
-
-    PCICR |= (1 << PCIE1);                                                     // PCINT1 aktivieren
-    PCMSK1 |= (1 << PCINT8) | (1 << PCINT9) | (1 << PCINT10) | (1 << PCINT11); // PCINTs maskieren
+    DDRB |= (1 << SIGN_PIN) | (1 << F0_PIN) | (1 << F4_PIN) | (1 << F1_PIN);
 
     timer0_init(); // Timer0 initialisieren
-    init_buttons();
 
-    sei(); // globale Interrupts aktivieren
-
-    // Powersaving
-    ADCSRA &= 0b01111111; // Analog to Digital Converter abstellen
-    ACSR |= 0b10000000;   // Analog Comparator abstellen
-    power_adc_disable();  // ADC Converter
-    power_spi_disable();  // SPI
-    */
+    requestButton.attachClick(request_click);
 
     while (1)
     {
+        if ((millis() - prevTime) >= 10)
+        {
+            prevTime = millis();
+            requestButton.tick();
+        }
+
+        switch (currentLightState)
+        {
+            case LightState::F0:
+                clear_bit(PORTB, SIGN_PIN);
+                set_bit(PORTB, F0_PIN);
+                clear_bit(PORTB, F4_PIN);
+                clear_bit(PORTB, F1_PIN);
+                break;
+
+            case LightState::F0_SIGN:
+                set_bit(PORTB, SIGN_PIN);
+                set_bit(PORTB, F0_PIN);
+                clear_bit(PORTB, F4_PIN);
+                clear_bit(PORTB, F1_PIN);
+
+                if (millis() - prevTimeStage >= randomNumber)
+                {
+                    currentLightState = LightState::F1_SIGN;
+                    prevTimeStage = millis();
+                }
+                break;
+
+            case LightState::F4:
+                clear_bit(PORTB, SIGN_PIN);
+                clear_bit(PORTB, F0_PIN);
+                set_bit(PORTB, F4_PIN);
+                clear_bit(PORTB, F1_PIN);
+
+                if (millis() - prevTimeStage >= F4_PERIOD)
+                    currentLightState = LightState::F0;
+                break;
+
+            case LightState::F4_SIGN:
+                set_bit(PORTB, SIGN_PIN);
+                clear_bit(PORTB, F0_PIN);
+                set_bit(PORTB, F4_PIN);
+                clear_bit(PORTB, F1_PIN);
+
+                if (millis() - prevTimeStage >= F4_PERIOD)
+                {
+                    currentLightState = LightState::F0_SIGN;
+                    prevTimeStage = millis();
+                    // TODO: create random time
+                    randomNumber = 5000;
+                }
+                break;
+
+            case LightState::F1:
+                clear_bit(PORTB, SIGN_PIN);
+                clear_bit(PORTB, F0_PIN);
+                clear_bit(PORTB, F4_PIN);
+                set_bit(PORTB, F1_PIN);
+
+                if (millis() - prevTimeStage >= 1500)
+                {
+                    currentLightState = LightState::F4;
+                    prevTimeStage = millis();
+                }
+                break;
+
+            case LightState::F1_SIGN:
+                set_bit(PORTB, SIGN_PIN);
+                clear_bit(PORTB, F0_PIN);
+                clear_bit(PORTB, F4_PIN);
+                set_bit(PORTB, F1_PIN);
+
+                if (millis() - prevTimeStage >= randomNumber)
+                {
+                    currentLightState = LightState::F1;
+                    prevTimeStage = millis();
+                }
+                break;
+
+            default:
+                break;
+        }
     }
 }
 
-/*
-ISR(PCINT1_vect)
+void request_click()
 {
-    if (check_bit(PINC, 0) != check_bit(buttonStates, 0))
+    switch (currentLightState)
     {
-        toggle_bit(buttonStates, 0);
-        set_bit(interruptFlags, 0);
-    }
-    else if (check_bit(PINC, 1) != check_bit(buttonStates, 1))
-    {
-        toggle_bit(buttonStates, 1);
-        set_bit(interruptFlags, 1);
-    }
-    else if (check_bit(PINC, 2) != check_bit(buttonStates, 2))
-    {
-        toggle_bit(buttonStates, 2);
-        set_bit(interruptFlags, 2);
-    }
-    else if (!check_bit(PINC, 3))
-    {
-        set_bit(interruptFlags, 3);
+        case LightState::F0:
+            currentLightState = LightState::F0_SIGN;
+            prevTimeStage = millis();
+            // TODO: create random time
+            randomNumber = 5000;
+            break;
+
+        case LightState::F4:
+        case LightState::F4_SIGN:
+            currentLightState = LightState::F4_SIGN;
+            break;
+
+        case LightState::F1:
+        case LightState::F1_SIGN:
+            currentLightState = LightState::F1_SIGN;
+
+            prevTimeStage = millis();
+            // reset timer
+            break;
+
+        case LightState::F0_SIGN:
+        default:
+            break;
     }
 }
-*/
