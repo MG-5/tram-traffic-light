@@ -23,7 +23,7 @@ enum class LightState
 };
 
 OneButton requestButton(&PIND, 2);
-LightState currentLightState;
+LightState currentLightState = LightState::F4;
 
 uint32_t prevTime = 0;
 uint32_t prevTimeStage = 0;
