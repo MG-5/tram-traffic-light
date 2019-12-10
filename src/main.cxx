@@ -5,10 +5,10 @@
 
 #include <avr/io.h>
 
-#define SIGN_PIN PINB3
-#define F0_PIN PINB2
-#define F4_PIN PINB1
-#define F1_PIN PINB0
+#define SIGN_PIN PINB0
+#define F0_PIN PINB1
+#define F4_PIN PINB2
+#define F1_PIN PINB3
 
 #define F4_PERIOD 6000 // in ms
 
