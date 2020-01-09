@@ -10,7 +10,7 @@ PROJECT = tram_lsa
 
 #Progammer
 PROGRAMMER = stk500v2
-PORT = -P/dev/ttyUSB0
+PORT = -P/dev/ttyACM0
 BAUD = -b115200
 
 # ----- These configurations are quite likely not to be changed -----
