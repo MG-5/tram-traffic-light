@@ -3,6 +3,7 @@
 #include "../../common/bit_manipulation.h"
 #include "../../common/timer0.h"
 
+#include <avr/interrupt.h>
 #include <avr/io.h>
 
 #define SIGN_PIN PINB0
@@ -43,6 +44,8 @@ int main(void)
     DDRB |= (1 << SIGN_PIN) | (1 << F0_PIN) | (1 << F4_PIN) | (1 << F1_PIN);
 
     timer0_init(); // Timer0 initialisieren
+
+    sei();
 
     requestButton.attachClick(request_click);
 
