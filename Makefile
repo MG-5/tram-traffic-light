@@ -4,7 +4,7 @@
 # ----- Update the settings of your project here -----
 
 # Hardware
-MCU     = attiny4313 # see `make show-mcu`
+MCU     = attiny44a # see `make show-mcu`
 F_CPU   = 1000000UL
 PROJECT = tram_lsa
 

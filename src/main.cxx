@@ -6,10 +6,32 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
+#if defined(__AVR_ATtiny4313__)
+#define LED_PORT PORTB
+#define LED_DDR DDRB
 #define SIGN_PIN PINB0
 #define F0_PIN PINB1
 #define F4_PIN PINB2
 #define F1_PIN PINB3
+
+#define BTN_PORT PORTD
+#define BTN_DDR DDRD
+#define BTN_PIN PIND2
+OneButton requestButton(&PIND, 2);
+
+#elif defined(__AVR_ATtiny44A__)
+#define LED_PORT PORTA
+#define LED_DDR DDRA
+#define SIGN_PIN PINA3
+#define F0_PIN PINA2
+#define F4_PIN PINA1
+#define F1_PIN PINA0
+
+#define BTN_PORT PORTA
+#define BTN_DDR DDRA
+#define BTN_PIN PINA6
+OneButton requestButton(&PINA, 6);
+#endif
 
 #define F4_PERIOD 6000 // in ms
 
@@ -23,7 +45,6 @@ enum class LightState
     F1_SIGN
 };
 
-OneButton requestButton(&PIND, 2);
 LightState currentLightState = LightState::F4;
 
 uint32_t prevTime = 0;
@@ -35,13 +56,13 @@ void request_click();
 int main(void)
 {
     // Eingänge
-    DDRD &= ~(1 << PIND2);
+    BTN_DDR &= ~(1 << BTN_PIN);
 
     // PullUp-Widerstand
-    PORTD |= (1 << PIND2);
+    BTN_PORT |= (1 << BTN_PIN);
 
     // Ausgänge
-    DDRB |= (1 << SIGN_PIN) | (1 << F0_PIN) | (1 << F4_PIN) | (1 << F1_PIN);
+    LED_DDR |= (1 << SIGN_PIN) | (1 << F0_PIN) | (1 << F4_PIN) | (1 << F1_PIN);
 
     timer0_init(); // Timer0 initialisieren
 
@@ -60,17 +81,17 @@ int main(void)
         switch (currentLightState)
         {
             case LightState::F0:
-                clear_bit(PORTB, SIGN_PIN);
-                set_bit(PORTB, F0_PIN);
-                clear_bit(PORTB, F4_PIN);
-                clear_bit(PORTB, F1_PIN);
+                clear_bit(LED_PORT, SIGN_PIN);
+                set_bit(LED_PORT, F0_PIN);
+                clear_bit(LED_PORT, F4_PIN);
+                clear_bit(LED_PORT, F1_PIN);
                 break;
 
             case LightState::F0_SIGN:
-                set_bit(PORTB, SIGN_PIN);
-                set_bit(PORTB, F0_PIN);
-                clear_bit(PORTB, F4_PIN);
-                clear_bit(PORTB, F1_PIN);
+                set_bit(LED_PORT, SIGN_PIN);
+                set_bit(LED_PORT, F0_PIN);
+                clear_bit(LED_PORT, F4_PIN);
+                clear_bit(LED_PORT, F1_PIN);
 
                 if (millis() - prevTimeStage >= randomNumber)
                 {
@@ -80,20 +101,20 @@ int main(void)
                 break;
 
             case LightState::F4:
-                clear_bit(PORTB, SIGN_PIN);
-                clear_bit(PORTB, F0_PIN);
-                set_bit(PORTB, F4_PIN);
-                clear_bit(PORTB, F1_PIN);
+                clear_bit(LED_PORT, SIGN_PIN);
+                clear_bit(LED_PORT, F0_PIN);
+                set_bit(LED_PORT, F4_PIN);
+                clear_bit(LED_PORT, F1_PIN);
 
                 if (millis() - prevTimeStage >= F4_PERIOD)
                     currentLightState = LightState::F0;
                 break;
 
             case LightState::F4_SIGN:
-                set_bit(PORTB, SIGN_PIN);
-                clear_bit(PORTB, F0_PIN);
-                set_bit(PORTB, F4_PIN);
-                clear_bit(PORTB, F1_PIN);
+                set_bit(LED_PORT, SIGN_PIN);
+                clear_bit(LED_PORT, F0_PIN);
+                set_bit(LED_PORT, F4_PIN);
+                clear_bit(LED_PORT, F1_PIN);
 
                 if (millis() - prevTimeStage >= F4_PERIOD)
                 {
@@ -105,10 +126,10 @@ int main(void)
                 break;
 
             case LightState::F1:
-                clear_bit(PORTB, SIGN_PIN);
-                clear_bit(PORTB, F0_PIN);
-                clear_bit(PORTB, F4_PIN);
-                set_bit(PORTB, F1_PIN);
+                clear_bit(LED_PORT, SIGN_PIN);
+                clear_bit(LED_PORT, F0_PIN);
+                clear_bit(LED_PORT, F4_PIN);
+                set_bit(LED_PORT, F1_PIN);
 
                 if (millis() - prevTimeStage >= 1500)
                 {
@@ -118,10 +139,10 @@ int main(void)
                 break;
 
             case LightState::F1_SIGN:
-                set_bit(PORTB, SIGN_PIN);
-                clear_bit(PORTB, F0_PIN);
-                clear_bit(PORTB, F4_PIN);
-                set_bit(PORTB, F1_PIN);
+                set_bit(LED_PORT, SIGN_PIN);
+                clear_bit(LED_PORT, F0_PIN);
+                clear_bit(LED_PORT, F4_PIN);
+                set_bit(LED_PORT, F1_PIN);
 
                 if (millis() - prevTimeStage >= randomNumber)
                 {
