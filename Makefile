@@ -9,6 +9,7 @@ F_CPU   = 1000000UL
 PROJECT = tram_lsa
 
 #Progammer
+PROGRAMMER_MCU = t44
 PROGRAMMER = stk500v2
 PORT = -P/dev/ttyACM0
 BAUD = -b115200
@@ -147,4 +148,4 @@ size:
 	avr-size --mcu=$(MCU) -C $(TARGET).elf
 
 flash: hex
-	avrdude -p$(MCU) $(PORT) $(BAUD) -c$(PROGRAMMER) -Uflash:w:$(TARGET).hex:a
+	avrdude -p$(PROGRAMMER_MCU) $(PORT) $(BAUD) -c$(PROGRAMMER) -Uflash:w:$(TARGET).hex:a
